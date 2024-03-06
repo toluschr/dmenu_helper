@@ -72,7 +72,7 @@ static int process_file(int fd, struct stat *st)
         goto _out_munmap;
     }
 
-    if (ent.name.size == 0 || ent.exec.size == 0) {
+    if (ent.name.size == 0 || ent.exec.size == 0 || fh_strbool(ent.no_display)) {
         rc = 0;
         goto _out_munmap;
     }
