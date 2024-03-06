@@ -110,6 +110,8 @@ int main(int argc, char **argv)
         }
     }
 
+    cmdline[cmdline_length] = '\0';
+
     char *shell = (char *)getenv("SHELL");
     if (shell == NULL) shell = "/bin/sh";
 
