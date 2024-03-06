@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <unistd.h>
+#include <limits.h>
 #include <fcntl.h>
 
 #include <sys/stat.h>
@@ -10,57 +11,12 @@
 #include <dirent.h>
 #include <errno.h>
 
+#include "fmenu_helper.h"
 #include "ini.h"
 
-struct string {
-    const char *data;
-    size_t size;
-};
-
-struct raw_desktop_entry {
-    struct string version, type, name, generic_name, comment, try_exec, exec, categories;
-};
-
-bool streq_pl(const char *p, const char *o, size_t ol)
-{
-    size_t pl = strlen(p);
-    if (ol != pl) return false;
-
-    return memcmp(p, o, ol) == 0;
-}
-
-int cb(const char *s, size_t sl, const char *k, size_t kl, const char *v, size_t vl, void *user)
-{
-    // printf("['%.*s' (%d)] '%.*s' (%d) = '%.*s' (%d)\n", sl, s, sl, kl, k, kl, vl, v, vl);
-
-    if (!streq_pl("Desktop Entry", s, sl)) {
-        return 1;
-    }
-
-    struct string *into = NULL;
-
-    if (streq_pl("Type", k, kl)) {
-        into = &((struct raw_desktop_entry *)user)->type;
-    }
-
-    if (streq_pl("Exec", k, kl)) {
-        into = &((struct raw_desktop_entry *)user)->exec;
-    }
-
-    if (streq_pl("Name", k, kl)) {
-        into = &((struct raw_desktop_entry *)user)->name;
-    }
-
-    if (into == NULL) {
-        return 1;
-    }
-
-    into->data = v;
-    into->size = vl;
-    return 1;
-}
-
 static int process_entry(int dirfd, const char *path);
+static int process_file(int fd, struct stat *st);
+static int process_dir(int fd, struct stat *st);
 
 static int process_dir(int fd, struct stat *st)
 {
@@ -97,10 +53,9 @@ static int process_dir(int fd, struct stat *st)
 
 static int process_file(int fd, struct stat *st)
 {
-    struct raw_desktop_entry ent;
-    memset(&ent, 0, sizeof(ent));
-
+    int rc = -1;
     void *map;
+    struct raw_desktop_entry ent;
 
     if (st->st_size == 0) {
         return 0;
@@ -108,22 +63,54 @@ static int process_file(int fd, struct stat *st)
 
     map = mmap(NULL, st->st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED) {
-        return -1;
+        goto _out_close;
     }
 
-    if (!ini_parse_string(map, st->st_size, cb, &ent)) {
-        return -1;
+    memset(&ent, 0, sizeof(ent));
+
+    if (!ini_parse_string(map, st->st_size, fh_ini_callback, &ent)) {
+        goto _out_munmap;
     }
 
-    if (ent.exec.size > 0) {
-        printf("%.*s\rfmenu_app %.*s\n", ent.name.size, ent.name.data, ent.exec.size, ent.exec.data);
+    if (ent.name.size == 0 || ent.exec.size == 0) {
+        rc = 0;
+        goto _out_munmap;
     }
 
-    if (munmap(map, st->st_size) < 0) {
-        return -1;
+    int size = snprintf(NULL, 0, "/proc/self/fd/%d", fd);
+
+    char *path = malloc(size + 1);
+    if (path == NULL) {
+        goto _out_munmap;
     }
 
-    return 0;
+    snprintf(path, size + 1, "/proc/self/fd/%d", fd);
+
+    char *realpath = NULL;
+    size_t realpath_size = 0;
+    ssize_t realpath_length;
+
+    realpath_length = fh_malloc_readlink(path, &realpath, &realpath_size);
+    if (realpath_length < 0) {
+        goto _out_free_realpath;
+    }
+
+    printf("%.*s\rfmenu_app %.*s\n", ent.name.size, ent.name.data, realpath_length, realpath);
+    rc = 0;
+
+_out_free_realpath:
+    free(realpath);
+
+_out_free_path:
+    free(path);
+
+_out_munmap:
+    munmap(map, st->st_size);
+
+_out_close:
+    close(fd);
+
+    return rc;
 }
 
 static int process_entry(int dirfd, const char *path)
