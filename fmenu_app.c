@@ -20,6 +20,15 @@ int main(int argc, char **argv)
     int fd;
     int rc = EXIT_FAILURE;
 
+    const char **file = NULL;
+
+    if (argc < 2) {
+        fprintf(stderr, "usage: fmenu_app <desktop_file> <args...>\n");
+        return 1;
+    }
+
+    file = (const char **)(argv + 2);
+
     fd = open(argv[1], O_RDONLY);
     if (fd < 0) {
         perror("unable to open desktop file");
@@ -63,17 +72,22 @@ int main(int argc, char **argv)
 
     int cmdline_length = 0;
 
-    const char *append[3];
-    size_t append_length[3];
+    const char *b[3];
+    size_t b_length[3];
+
+    const char **append;
+    size_t *append_length;
 
     for (int i = 0; i < rde.exec.size; i++) {
-        memset(append, 0, sizeof(append));
+        memset(b, 0, sizeof(b));
+        append = b;
+        append_length = b_length;
 
         if (rde.exec.data[i] == '%' && i + 1 < rde.exec.size) {
             switch (rde.exec.data[i + 1]) {
             case 'i':
                 if (rde.icon.size != 0) {
-                    append[0] = "--icon ";
+                    append[0] = "--icon";
                     append_length[0] = strlen(append[0]);
 
                     append[1] = rde.icon.data;
@@ -88,6 +102,14 @@ int main(int argc, char **argv)
                 append[0] = argv[1];
                 append_length[0] = strlen(argv[1]);
                 break;
+            case 'f':
+                append = (const char *[]){file[0], NULL};
+                append_length = NULL;
+                break;
+            case 'F':
+                append = file;
+                append_length = NULL;
+                break;
             // ignore everything else
             default:
                 break;
@@ -100,13 +122,20 @@ int main(int argc, char **argv)
         }
 
         for (int j = 0; append[j]; j++) {
-            if (cmdline_length + append_length[j] > arg_max) {
+            size_t len = append_length ? append_length[j] : strlen(append[j]);
+
+            if (cmdline_length + len + !j > arg_max) {
                 fprintf(stderr, "cmdline length exceeds ARG_MAX\n");
                 return 1;
             }
 
-            memcpy(cmdline + cmdline_length, append[j], append_length[j]);
-            cmdline_length += append_length[j];
+            if (j != 0) {
+                memcpy(cmdline + cmdline_length, " ", 1);
+                cmdline_length += 1;
+            }
+
+            memcpy(cmdline + cmdline_length, append[j], len);
+            cmdline_length += len;
         }
     }
 
