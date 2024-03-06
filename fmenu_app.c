@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     const char *arg0;
     char *const *args;
 
-    if (fh_strcaseeq_pl("true", rde.terminal.data, rde.terminal.size)) {
+    if (fh_strbool(rde.terminal)) {
         arg0 = "alacritty";
         args = (char * const []){"alacritty", "-e", shell, "-c", cmdline, NULL};
     } else {
