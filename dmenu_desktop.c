@@ -11,7 +11,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "fmenu_helper.h"
+#include "dmenu_helper.h"
 #include "ini.h"
 
 static int process_entry(int dirfd, const char *path);
@@ -95,7 +95,7 @@ static int process_file(int fd, struct stat *st)
         goto _out_free_realpath;
     }
 
-    printf("%.*s\rfmenu_app %.*s\n", ent.name.size, ent.name.data, realpath_length, realpath);
+    printf("%.*s\rdmenu_app %.*s\n", ent.name.size, ent.name.data, realpath_length, realpath);
     rc = 0;
 
 _out_free_realpath:
@@ -137,6 +137,7 @@ static int process_entry(int dirfd, const char *path)
 
 int main()
 {
+    // @fixme: use paths specified in $XDG_DATA_DIRS
     char application_path[] = "/usr/share/applications:~/.local/share/applications";
     const char *tok;
 
@@ -145,7 +146,7 @@ int main()
         wordexp_t p;
 
         if (wordexp(tok, &p, 0) != 0) {
-            printf("error!\n");
+            fprintf(stderr, "Unable to shell expand '%s'\n", tok);
         }
 
         for (int i = 0; i < p.we_wordc; i++) {

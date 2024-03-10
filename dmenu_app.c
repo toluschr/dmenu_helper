@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#include "fmenu_helper.h"
+#include "dmenu_helper.h"
 #include "ini.h"
 
 int main(int argc, char **argv)
