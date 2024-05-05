@@ -1,0 +1,3 @@
+[submodule "simdini"]
+	path = simdini
+	url = https://github.com/toluschr/simdini.git
