@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 
             if (cmdline_length + len + !j > arg_max) {
                 fprintf(stderr, "cmdline length exceeds ARG_MAX\n");
-                return 1;
+                exit(EXIT_FAILURE);
             }
 
             if (j != 0) {
@@ -145,19 +145,18 @@ int main(int argc, char **argv)
     if (shell == NULL) shell = "/bin/sh";
 
     shell = strdup(shell);
-
-    const char *arg0;
-    char *const *args;
-
-    if (fh_strbool(rde.terminal)) {
-        arg0 = "alacritty";
-        args = (char * const []){"alacritty", "-e", shell, "-c", cmdline, NULL};
-    } else {
-        arg0 = shell;
-        args = (char *const []){shell, "-c", cmdline, NULL};
+    if (shell == NULL) {
+        perror("strdup failed");
+        exit(EXIT_FAILURE);
     }
 
-    execvp(arg0, args);
+    char *const *args;
+    char *const term_args[] = {"alacritty", "-e", shell, "-c", cmdline, NULL};
+    char *const shell_args[] = {shell, "-c", cmdline, NULL};
+
+    args = fh_strbool(rde.terminal) ? term_args : shell_args;
+
+    execvp(args[0], args);
 
     perror("exec failed");
 
