@@ -20,6 +20,8 @@ static int process_dir(int fd, struct stat *st);
 
 static int process_dir(int fd, struct stat *st)
 {
+    (void)(st);
+
     DIR *d = fdopendir(fd);
     if (d == NULL) {
         return -1;
@@ -95,13 +97,13 @@ static int process_file(int fd, struct stat *st)
         goto _out_free_realpath;
     }
 
-    printf("%.*s\rdmenu_app %.*s\n", ent.name.size, ent.name.data, realpath_length, realpath);
+    printf("%.*s\rdmenu_app %.*s\n", (int)ent.name.size, ent.name.data, (int)realpath_length, realpath);
     rc = 0;
 
 _out_free_realpath:
     free(realpath);
 
-_out_free_path:
+// _out_free_path:
     free(path);
 
 _out_munmap:
@@ -149,7 +151,7 @@ int main()
             fprintf(stderr, "Unable to shell expand '%s'\n", tok);
         }
 
-        for (int i = 0; i < p.we_wordc; i++) {
+        for (size_t i = 0; i < p.we_wordc; i++) {
             if (process_entry(AT_FDCWD, p.we_wordv[i]) == -1) {
                 fprintf(stderr, "Processing one or more entries failed\n");
             }

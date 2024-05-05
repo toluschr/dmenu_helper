@@ -1,4 +1,7 @@
-CFLAGS := -O3 -g0 -march=native -mtune=native
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-variables
+
+CFLAGS := -O3 -g0 -march=native -mtune=native -Werror -Wall -Wextra
 CFLAGS += -MMD
 CFLAGS += -I ./simdini
 
@@ -9,16 +12,18 @@ obj = dmenu_app.o dmenu_desktop.o dmenu_helper.o
 dep = $(obj:%.o=%.d)
 
 .PHONY: all
-all: simdini dmenu_app dmenu_desktop
+all: simdini/ini.o $(bin)
+
+.PHONY: simdini
+simdini:
+	$(MAKE) -C simdini all
 
 .PHONY: clean
 clean:
 	$(MAKE) -C simdini $@
 	-rm -f $(obj) $(bin) $(dep)
 
-.PHONY: simdini
-simdini:
-	$(MAKE) -C $@
+simdini/ini.o: simdini
 
 dmenu_app: dmenu_app.o dmenu_helper.o simdini/ini.o
 	$(CC) $^ -o $@

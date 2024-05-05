@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
     memset(&rde, 0, sizeof(rde));
 
-    if (ini_parse_string(memory, st.st_size, fh_ini_callback, &rde) < 0) {
+    if (ini_parse_string(memory, st.st_size, fh_ini_callback, &rde) == false) {
         fprintf(stderr, "unable to parse ini file\n");
         goto _munmap;
     }
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     const char **append;
     size_t *append_length;
 
-    for (int i = 0; i < rde.exec.size; i++) {
+    for (size_t i = 0; i < rde.exec.size; i++) {
         memset(b, 0, sizeof(b));
         append = b;
         append_length = b_length;
@@ -103,7 +103,8 @@ int main(int argc, char **argv)
                 append_length[0] = strlen(argv[1]);
                 break;
             case 'f':
-                append = (const char *[]){file[0], NULL};
+                append[0] = file[0];
+                append[1] = NULL;
                 append_length = NULL;
                 break;
             case 'F':
@@ -124,7 +125,7 @@ int main(int argc, char **argv)
         for (int j = 0; append[j]; j++) {
             size_t len = append_length ? append_length[j] : strlen(append[j]);
 
-            if (cmdline_length + len + !j > arg_max) {
+            if (cmdline_length + len + !j > (size_t)arg_max) {
                 fprintf(stderr, "cmdline length exceeds ARG_MAX\n");
                 exit(EXIT_FAILURE);
             }

@@ -89,7 +89,7 @@ ssize_t fh_malloc_readlink(const char *link_path, char **output_path, size_t *si
     ssize_t realpath_length = 0;
 
     for (;;) {
-        if (realpath_length <= *size) {
+        if ((size_t)realpath_length <= *size) {
             *size += 4096;
         }
 
@@ -99,7 +99,7 @@ ssize_t fh_malloc_readlink(const char *link_path, char **output_path, size_t *si
         }
 
         realpath_length = readlink(link_path, ((*output_path) = new_realpath), *size);
-        if (realpath_length < 0 || realpath_length != *size) {
+        if (realpath_length < 0 || (size_t)realpath_length != *size) {
             break;
         }
     }
