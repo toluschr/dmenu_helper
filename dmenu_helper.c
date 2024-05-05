@@ -45,7 +45,7 @@ bool fh_streq_pl(const char *p, const char *o, size_t ol)
 
 int fh_ini_callback(const char *s, size_t sl, const char *k, size_t kl, const char *v, size_t vl, void *user)
 {
-    if (!fh_streq_pl("Desktop Entry", s, sl)) {
+    if (!s || !fh_streq_pl("Desktop Entry", s, sl)) {
         return 1;
     }
 
