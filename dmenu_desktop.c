@@ -139,6 +139,7 @@ static int process_entry(int dirfd, const char *path)
 
 int main()
 {
+    int rc = EXIT_SUCCESS;
     // @fixme: use paths specified in $XDG_DATA_DIRS
     char application_path[] = "/usr/share/applications:~/.local/share/applications";
     const char *tok;
@@ -154,9 +155,12 @@ int main()
         for (size_t i = 0; i < p.we_wordc; i++) {
             if (process_entry(AT_FDCWD, p.we_wordv[i]) == -1) {
                 fprintf(stderr, "Processing one or more entries failed\n");
+                rc = EXIT_FAILURE;
             }
         }
 
         tok = strtok(NULL, ":;");
     }
+
+    return rc;
 }
