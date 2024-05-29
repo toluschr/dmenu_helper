@@ -159,6 +159,8 @@ int main()
             }
         }
 
+        wordfree(&p);
+
         tok = strtok(NULL, ":;");
     }
 
