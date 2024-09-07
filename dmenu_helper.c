@@ -46,7 +46,7 @@ bool fh_streq_pl(const char *p, const char *o, size_t ol)
 int fh_ini_callback(const char *s, size_t sl, const char *k, size_t kl, const char *v, size_t vl, void *user)
 {
     if (!s || !fh_streq_pl("Desktop Entry", s, sl)) {
-        return 1;
+        return 0;
     }
 
     struct string *into = NULL;
@@ -76,12 +76,12 @@ int fh_ini_callback(const char *s, size_t sl, const char *k, size_t kl, const ch
     }
 
     if (into == NULL) {
-        return 1;
+        return 0;
     }
 
     into->data = v;
     into->size = vl;
-    return 1;
+    return 0;
 }
 
 ssize_t fh_malloc_readlink(const char *link_path, char **output_path, size_t *size)
