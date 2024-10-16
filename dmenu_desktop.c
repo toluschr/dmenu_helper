@@ -141,7 +141,7 @@ int main()
 {
     int rc = EXIT_SUCCESS;
     // @fixme: use paths specified in $XDG_DATA_DIRS
-    char application_path[] = "/usr/share/applications:~/.local/share/applications";
+    char application_path[] = "/usr/share/applications:/usr/local/share/applications:~/.local/share/applications";
     const char *tok;
 
     tok = strtok(application_path, ":;");
