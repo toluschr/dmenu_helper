@@ -173,12 +173,12 @@ int main()
         wordexp_t p;
 
         if (wordexp(tok, &p, 0) != 0) {
-            fprintf(stderr, "Unable to shell expand '%s'\n", tok);
+            fprintf(stderr, "Failed to shell expand '%s'\n", tok);
         }
 
         for (size_t i = 0; i < p.we_wordc; i++) {
             if (process_entry(AT_FDCWD, p.we_wordv[i]) == -1) {
-                fprintf(stderr, "Processing one or more entries failed\n");
+                fprintf(stderr, "%s: One or more errors\n", p.we_wordv[i]);
                 rc = EXIT_FAILURE;
             }
         }
