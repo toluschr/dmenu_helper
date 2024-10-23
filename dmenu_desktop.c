@@ -97,7 +97,31 @@ static int process_file(int fd, struct stat *st)
         goto _out_free_realpath;
     }
 
-    printf("%.*s\rdmenu_app %.*s\n", (int)ent.name.size, ent.name.data, (int)realpath_length, realpath);
+    {
+        char *old = realpath;
+        char *new = realpath;
+        char *end = realpath + realpath_length;
+
+        printf("%.*s\rdmenu_app '", (int)ent.name.size, ent.name.data);
+
+        for (;;) {
+            new = memchr(old, '\'', end - old);
+            if (new == NULL) {
+                new = end;
+            }
+
+            printf("%.*s", (int)(new - old), old);
+            if (new == end) {
+                break;
+            }
+
+            printf("'\\''");
+            old = new + 1;
+        }
+
+        printf("'\n");
+    }
+
     rc = 0;
 
 _out_free_realpath:
