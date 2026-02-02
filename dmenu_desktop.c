@@ -15,6 +15,7 @@
 #include "ini.h"
 
 static bool without_name;
+static char **filters;
 
 static int process_entry(int dirfd, const char *path);
 static int process_file(int fd, struct stat *st);
@@ -163,6 +164,23 @@ static int process_entry(int dirfd, const char *path)
         return process_dir(fd, &st);
     }
 
+    if (filters) {
+        const char *filename = strrchr(path, '/');
+        filename = filename ? filename + 1 : path;
+
+        size_t i = 0;
+        for (i = 0; filters[i]; i++) {
+            if (strcmp(filters[i], filename) == 0) {
+                break;
+            }
+        }
+
+        if (!filters[i]) {
+            close(fd);
+            return 0;
+        }
+    }
+
     return process_file(fd, &st);
 }
 
@@ -180,6 +198,7 @@ int main(int argc, char **argv)
     }
 
     argc -= optind, argv += optind;
+    if (argc) filters = argv;
 
     tok = strtok(application_path, ":;");
     while (tok) {
