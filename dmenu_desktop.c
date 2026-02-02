@@ -187,9 +187,6 @@ static int process_entry(int dirfd, const char *path)
 int main(int argc, char **argv)
 {
     int rc = EXIT_SUCCESS;
-    // @fixme: use paths specified in $XDG_DATA_DIRS
-    char application_path[] = "/usr/share/applications:/usr/local/share/applications:~/.local/share/applications";
-    const char *tok;
 
     for (int ch; (ch = getopt(argc, argv, ":n")) != -1; ) {
         switch (ch) {
@@ -200,24 +197,40 @@ int main(int argc, char **argv)
     argc -= optind, argv += optind;
     if (argc) filters = argv;
 
-    tok = strtok(application_path, ":;");
-    while (tok) {
+    const char *xdg_data_dirs = getenv("XDG_DATA_DIRS");
+    const char *xdg_data_home = getenv("XDG_DATA_HOME");
+
+    if (!xdg_data_dirs) xdg_data_dirs = "/usr/local/share:/usr/share";
+    if (!xdg_data_home) xdg_data_home = "~/.local/share";
+
+    size_t path_length = strlen(xdg_data_home) + 1 + strlen(xdg_data_dirs);
+    char path[path_length + 1];
+
+    path[0] = 0;
+    strcat(path, xdg_data_home);
+    strcat(path, ":");
+    strcat(path, xdg_data_dirs);
+
+    for (char *tok, *p = path; (tok = strtok(p, ":")); p = NULL) {
         wordexp_t p;
 
         if (wordexp(tok, &p, 0) != 0) {
-            fprintf(stderr, "Failed to shell expand '%s'\n", tok);
+            fprintf(stderr, "failed to shell expand '%s'\n", tok);
         }
 
         for (size_t i = 0; i < p.we_wordc; i++) {
-            if (process_entry(AT_FDCWD, p.we_wordv[i]) == -1) {
+            int fd = openat(AT_FDCWD, p.we_wordv[i], O_RDONLY);
+            if (fd < 0) continue;
+
+            if (process_entry(fd, "applications") == -1) {
                 fprintf(stderr, "%s: One or more errors\n", p.we_wordv[i]);
                 rc = EXIT_FAILURE;
             }
+
+            close(fd);
         }
 
         wordfree(&p);
-
-        tok = strtok(NULL, ":;");
     }
 
     return rc;
