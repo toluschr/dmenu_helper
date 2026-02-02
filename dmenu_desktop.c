@@ -14,6 +14,8 @@
 #include "dmenu_helper.h"
 #include "ini.h"
 
+static bool without_name;
+
 static int process_entry(int dirfd, const char *path);
 static int process_file(int fd, struct stat *st);
 static int process_dir(int fd, struct stat *st);
@@ -102,7 +104,10 @@ static int process_file(int fd, struct stat *st)
         char *new = realpath;
         char *end = realpath + realpath_length;
 
-        printf("%.*s\rdmenu_app '", (int)ent.name.size, ent.name.data);
+        if (!without_name)
+            printf("%.*s\rdmenu_app '", (int)ent.name.size, ent.name.data);
+        else
+            printf("dmenu_app '");
 
         for (;;) {
             new = memchr(old, '\'', end - old);
@@ -161,12 +166,20 @@ static int process_entry(int dirfd, const char *path)
     return process_file(fd, &st);
 }
 
-int main()
+int main(int argc, char **argv)
 {
     int rc = EXIT_SUCCESS;
     // @fixme: use paths specified in $XDG_DATA_DIRS
     char application_path[] = "/usr/share/applications:/usr/local/share/applications:~/.local/share/applications";
     const char *tok;
+
+    for (int ch; (ch = getopt(argc, argv, ":n")) != -1; ) {
+        switch (ch) {
+        case 'n': without_name = true; break;
+        }
+    }
+
+    argc -= optind, argv += optind;
 
     tok = strtok(application_path, ":;");
     while (tok) {
