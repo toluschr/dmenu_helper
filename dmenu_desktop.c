@@ -14,7 +14,7 @@
 #include "dmenu_helper.h"
 #include "ini.h"
 
-static bool without_name;
+static bool locate_only;
 static char **filters;
 
 static int process_entry(int dirfd, const char *path);
@@ -105,10 +105,8 @@ static int process_file(int fd, struct stat *st)
         char *new = realpath;
         char *end = realpath + realpath_length;
 
-        if (!without_name)
+        if (!locate_only)
             printf("%.*s\rdmenu_app '", (int)ent.name.size, ent.name.data);
-        else
-            printf("dmenu_app '");
 
         for (;;) {
             new = memchr(old, '\'', end - old);
@@ -125,7 +123,10 @@ static int process_file(int fd, struct stat *st)
             old = new + 1;
         }
 
-        printf("'\n");
+        if (!locate_only)
+            printf("'");
+
+        printf("\n");
     }
 
     rc = 0;
@@ -188,9 +189,9 @@ int main(int argc, char **argv)
 {
     int rc = EXIT_SUCCESS;
 
-    for (int ch; (ch = getopt(argc, argv, ":n")) != -1; ) {
+    for (int ch; (ch = getopt(argc, argv, ":l")) != -1; ) {
         switch (ch) {
-        case 'n': without_name = true; break;
+        case 'l': locate_only = true; break;
         }
     }
 
